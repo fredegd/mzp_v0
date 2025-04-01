@@ -1,8 +1,7 @@
 "use client"
 
 import type React from "react"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -21,14 +20,39 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input"
-import { Moon, Sun, Download, Upload, Trash2, Info } from "lucide-react"
+import { Moon, Sun, Download, Upload, Trash2, Info, Database, CheckCircle, XCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { getSupabaseClient } from "@/lib/supabase"
+import { Badge } from "@/components/ui/badge"
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme()
   const { toast } = useToast()
   const [defaultServings, setDefaultServings] = useState("2")
+  const [supabaseConnected, setSupabaseConnected] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    // Check if Supabase is connected
+    const checkSupabaseConnection = async () => {
+      try {
+        const supabase = getSupabaseClient()
+        if (!supabase) {
+          setSupabaseConnected(false)
+          return
+        }
+
+        // Try a simple query to check connection
+        const { error } = await supabase.from("recipes").select("id").limit(1)
+        setSupabaseConnected(!error)
+      } catch (error) {
+        console.error("Error checking Supabase connection:", error)
+        setSupabaseConnected(false)
+      }
+    }
+
+    checkSupabaseConnection()
+  }, [])
 
   const clearAllData = () => {
     localStorage.removeItem("recipes")
@@ -121,6 +145,43 @@ export default function SettingsPage() {
       <h1 className="text-3xl font-bold mb-6">Settings</h1>
 
       <div className="grid gap-6">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Database Connection</CardTitle>
+                <CardDescription>Status of your Supabase database connection</CardDescription>
+              </div>
+              <Badge
+                variant={supabaseConnected === null ? "outline" : supabaseConnected ? "success" : "destructive"}
+                className="ml-2"
+              >
+                {supabaseConnected === null ? (
+                  "Checking..."
+                ) : supabaseConnected ? (
+                  <div className="flex items-center">
+                    <CheckCircle className="mr-1 h-3 w-3" />
+                    Connected
+                  </div>
+                ) : (
+                  <div className="flex items-center">
+                    <XCircle className="mr-1 h-3 w-3" />
+                    Not Connected
+                  </div>
+                )}
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center text-sm text-muted-foreground">
+              <Database className="mr-2 h-4 w-4" />
+              {supabaseConnected
+                ? "Your data is being stored in Supabase. Changes will be synchronized across devices."
+                : "Using local storage only. Your data will only be available on this device."}
+            </div>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle>Appearance</CardTitle>

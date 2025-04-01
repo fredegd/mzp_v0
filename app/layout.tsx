@@ -10,7 +10,6 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata = {
   title: "Meal Planner",
   description: "Plan your meals and generate shopping lists",
-    generator: 'v0.dev'
 }
 
 export default function RootLayout({
@@ -34,6 +33,3 @@ export default function RootLayout({
   )
 }
 
-
-
-import './globals.css'

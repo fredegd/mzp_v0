@@ -1,6 +1,6 @@
 import type { Recipe } from "@/types"
 import { v4 as uuidv4 } from "uuid"
-import { supabase } from "@/lib/supabase"
+import { getSupabaseClient } from "@/lib/supabase"
 
 // Function to convert database recipe to app recipe
 const dbRecipeToAppRecipe = (dbRecipe: any): Recipe => {
@@ -29,14 +29,17 @@ const appRecipeToDbRecipe = (recipe: Omit<Recipe, "id">, id?: string) => {
   }
 }
 
-// Fallback to localStorage if Supabase is not configured
-const isSupabaseConfigured = () => {
-  return process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+// Check if Supabase is configured and available
+const isSupabaseAvailable = () => {
+  return !!getSupabaseClient()
 }
 
 export async function getRecipes(): Promise<Recipe[]> {
-  if (isSupabaseConfigured()) {
+  if (isSupabaseAvailable()) {
     try {
+      const supabase = getSupabaseClient()
+      if (!supabase) throw new Error("Supabase client not available")
+
       const { data, error } = await supabase.from("recipes").select("*").order("name")
 
       if (error) {
@@ -61,8 +64,11 @@ export async function getRecipes(): Promise<Recipe[]> {
 }
 
 export async function getRecipe(id: string): Promise<Recipe> {
-  if (isSupabaseConfigured()) {
+  if (isSupabaseAvailable()) {
     try {
+      const supabase = getSupabaseClient()
+      if (!supabase) throw new Error("Supabase client not available")
+
       const { data, error } = await supabase.from("recipes").select("*").eq("id", id).single()
 
       if (error) {
@@ -89,8 +95,11 @@ export async function getRecipe(id: string): Promise<Recipe> {
 }
 
 export async function saveRecipe(recipeData: Omit<Recipe, "id">, id?: string): Promise<Recipe> {
-  if (isSupabaseConfigured()) {
+  if (isSupabaseAvailable()) {
     try {
+      const supabase = getSupabaseClient()
+      if (!supabase) throw new Error("Supabase client not available")
+
       const dbRecipe = appRecipeToDbRecipe(recipeData, id)
 
       if (id) {
@@ -125,8 +134,11 @@ export async function saveRecipe(recipeData: Omit<Recipe, "id">, id?: string): P
 }
 
 export async function deleteRecipe(id: string): Promise<void> {
-  if (isSupabaseConfigured()) {
+  if (isSupabaseAvailable()) {
     try {
+      const supabase = getSupabaseClient()
+      if (!supabase) throw new Error("Supabase client not available")
+
       const { error } = await supabase.from("recipes").delete().eq("id", id)
 
       if (error) {

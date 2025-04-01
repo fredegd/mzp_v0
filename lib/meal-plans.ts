@@ -1,6 +1,6 @@
 import type { MealPlan } from "@/types"
 import { v4 as uuidv4 } from "uuid"
-import { supabase } from "@/lib/supabase"
+import { getSupabaseClient } from "@/lib/supabase"
 
 // Function to convert database meal plan to app meal plan
 const dbMealPlanToAppMealPlan = (dbMealPlan: any): MealPlan => {
@@ -10,14 +10,17 @@ const dbMealPlanToAppMealPlan = (dbMealPlan: any): MealPlan => {
   }
 }
 
-// Fallback to localStorage if Supabase is not configured
-const isSupabaseConfigured = () => {
-  return process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+// Check if Supabase is configured and available
+const isSupabaseAvailable = () => {
+  return !!getSupabaseClient()
 }
 
 export async function getMealPlans(): Promise<Record<string, MealPlan>> {
-  if (isSupabaseConfigured()) {
+  if (isSupabaseAvailable()) {
     try {
+      const supabase = getSupabaseClient()
+      if (!supabase) throw new Error("Supabase client not available")
+
       const { data, error } = await supabase.from("meal_plans").select("*")
 
       if (error) {
@@ -48,8 +51,11 @@ export async function getMealPlans(): Promise<Record<string, MealPlan>> {
 }
 
 export async function getMealPlan(date: string): Promise<MealPlan | null> {
-  if (isSupabaseConfigured()) {
+  if (isSupabaseAvailable()) {
     try {
+      const supabase = getSupabaseClient()
+      if (!supabase) throw new Error("Supabase client not available")
+
       const { data, error } = await supabase.from("meal_plans").select("*").eq("date", date).single()
 
       if (error) {
@@ -74,8 +80,11 @@ export async function getMealPlan(date: string): Promise<MealPlan | null> {
 }
 
 export async function saveMealPlan(date: string, mealPlan: MealPlan): Promise<MealPlan> {
-  if (isSupabaseConfigured()) {
+  if (isSupabaseAvailable()) {
     try {
+      const supabase = getSupabaseClient()
+      if (!supabase) throw new Error("Supabase client not available")
+
       // Check if meal plan already exists
       const { data: existingPlan, error: checkError } = await supabase
         .from("meal_plans")
@@ -138,8 +147,11 @@ export async function saveMealPlan(date: string, mealPlan: MealPlan): Promise<Me
 }
 
 export async function deleteMealPlan(date: string): Promise<void> {
-  if (isSupabaseConfigured()) {
+  if (isSupabaseAvailable()) {
     try {
+      const supabase = getSupabaseClient()
+      if (!supabase) throw new Error("Supabase client not available")
+
       const { error } = await supabase.from("meal_plans").delete().eq("date", date)
 
       if (error) {
